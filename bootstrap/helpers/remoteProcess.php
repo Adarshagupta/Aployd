@@ -96,8 +96,27 @@ function instant_remote_process_with_timeout(Collection|array $command, Server $
 
     return $output === 'null' ? null : $output;
 }
+
 function instant_remote_process(Collection|array $command, Server $server, bool $throwError = true, bool $no_sudo = false): ?string
 {
+    // For development testing - bypass real SSH connection
+    if (isDev() && env('MOCK_REMOTE_PROCESS', false)) {
+        $command_string = $command instanceof Collection ? $command->join("\n") : implode("\n", $command);
+
+        // Mock Docker version command
+        if (str_contains($command_string, 'docker version')) {
+            return 'Docker version 24.0.7';
+        }
+
+        // Mock general file system commands
+        if (str_contains($command_string, 'ls /')) {
+            return "bin\netc\nhome\nopt\nroot\nusr\nvar";
+        }
+
+        // Return empty success for other commands
+        return '';
+    }
+
     $command = $command instanceof Collection ? $command->toArray() : $command;
     if ($server->isNonRoot() && ! $no_sudo) {
         $command = parseCommandsByLineForSudo(collect($command), $server);
