@@ -27,6 +27,32 @@ DOCKER_VERSION="27.0"
 # TODO: Ask for a user
 CURRENT_USER=$USER
 
+# Function to verify required files exist in repository
+verify_required_files() {
+    echo "Verifying required files..."
+    local required_files=(
+        "/docker-compose.yml"
+        "/docker-compose.prod.yml"
+        "/.env.production"
+        "/scripts/upgrade.sh"
+    )
+    local missing_files=()
+    
+    for file in "${required_files[@]}"; do
+        if ! curl --output /dev/null --silent --head --fail "$CDN$file"; then
+            missing_files+=("$file")
+        fi
+    done
+    
+    if [ ${#missing_files[@]} -ne 0 ]; then
+        echo "Error: The following required files are missing from the repository:"
+        printf '%s\n' "${missing_files[@]}"
+        exit 1
+    fi
+    
+    echo "All required files verified successfully."
+}
+
 if [ $EUID != 0 ]; then
     echo "Please run this script as root or with sudo"
     exit
@@ -35,6 +61,25 @@ fi
 echo -e "Welcome to Coolify Installer!"
 echo -e "This script will install everything for you. Sit back and relax."
 echo -e "Source code: https://github.com/Adarshagupta/Aployd/blob/main/scripts/install.sh\n"
+
+# Verify required files exist before proceeding
+verify_required_files
+
+# Create base directories and set permissions
+echo "Setting up directories and permissions..."
+mkdir -p /data
+chown root:root /data
+chmod 755 /data
+
+mkdir -p /data/coolify/{source,ssh,applications,databases,backups,services,proxy,webhooks-during-maintenance,sentinel}
+mkdir -p /data/coolify/ssh/{keys,mux}
+mkdir -p /data/coolify/proxy/dynamic
+mkdir -p /data/coolify/source
+
+# Set proper ownership and permissions
+chown -R 9999:root /data/coolify
+chmod -R 700 /data/coolify
+echo "Directory setup complete."
 
 # Predefined root user
 ROOT_USERNAME=${ROOT_USERNAME:-}
@@ -225,13 +270,6 @@ if [ "$WARNING_SPACE" = true ]; then
     echo "Sleeping for 5 seconds."
     sleep 5
 fi
-
-mkdir -p /data/coolify/{source,ssh,applications,databases,backups,services,proxy,webhooks-during-maintenance,sentinel}
-mkdir -p /data/coolify/ssh/{keys,mux}
-mkdir -p /data/coolify/proxy/dynamic
-
-chown -R 9999:root /data/coolify
-chmod -R 700 /data/coolify
 
 INSTALLATION_LOG_WITH_DATE="/data/coolify/source/installation-${DATE}.log"
 
