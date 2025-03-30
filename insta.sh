@@ -15,9 +15,7 @@ set -e # Exit immediately if a command exits with a non-zero status
 ## $1 could be empty, so we need to disable this check
 #set -u # Treat unset variables as an error and exit
 set -o pipefail # Cause a pipeline to return the status of the last command that exited with a non-zero status
-
-# Update CDN URL to use raw GitHub content from your fork
-CDN="https://raw.githubusercontent.com/Adarshagupta/Aployd/main"
+CDN="https://cdn.coollabs.io/coolify"
 DATE=$(date +"%Y%m%d-%H%M%S")
 
 OS_TYPE=$(grep -w "ID" /etc/os-release | cut -d "=" -f 2 | tr -d '"')
@@ -34,7 +32,7 @@ fi
 
 echo -e "Welcome to Coolify Installer!"
 echo -e "This script will install everything for you. Sit back and relax."
-echo -e "Source code: https://github.com/Adarshagupta/Aployd/blob/main/scripts/install.sh\n"
+echo -e "Source code: https://github.com/coollabsio/coolify/blob/main/scripts/install.sh\n"
 
 # Predefined root user
 ROOT_USERNAME=${ROOT_USERNAME:-}
@@ -689,10 +687,10 @@ else
 fi
 
 echo -e "5. Download required files from CDN. "
-curl -fsSL $CDN/docker/docker-compose.yml -o /data/coolify/source/docker-compose.yml
-curl -fsSL $CDN/docker/docker-compose.prod.yml -o /data/coolify/source/docker-compose.prod.yml
+curl -fsSL $CDN/docker-compose.yml -o /data/coolify/source/docker-compose.yml
+curl -fsSL $CDN/docker-compose.prod.yml -o /data/coolify/source/docker-compose.prod.yml
 curl -fsSL $CDN/.env.production -o /data/coolify/source/.env.production
-curl -fsSL $CDN/scripts/upgrade.sh -o /data/coolify/source/upgrade.sh
+curl -fsSL $CDN/upgrade.sh -o /data/coolify/source/upgrade.sh
 
 echo -e "6. Make backup of .env to .env-$DATE"
 
