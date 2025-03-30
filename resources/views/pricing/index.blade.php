@@ -219,6 +219,25 @@
                     <div class="absolute top-4 right-4 px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-purple-500 to-pink-500">Popular</div>
                     <h2 class="text-2xl font-bold mb-4">Pro</h2>
                     
+                    <!-- Centralized Storage -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm">Total Storage</span>
+                            <span class="text-sm font-bold">$<span id="storagePrice">30</span>/mo</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-gray-400">Storage (GB)</label>
+                                <input type="range" min="30" max="100" value="30" class="w-full" id="totalStorage" 
+                                    oninput="updatePrice()">
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span>30 GB</span>
+                                    <span id="totalStorageValue">30 GB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Frontend Pricing -->
                     <div class="mb-6">
                         <div class="flex items-center justify-between mb-2">
@@ -229,19 +248,10 @@
                             <div>
                                 <label class="text-xs text-gray-400">CPU Cores</label>
                                 <input type="range" min="4" max="12" value="4" class="w-full" id="frontendCPU" 
-                                    oninput="updatePrice('frontend')">
+                                    oninput="updatePrice()">
                                 <div class="flex justify-between text-xs mt-1">
                                     <span>4 cores</span>
                                     <span id="frontendCPUValue">4 cores</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-400">Storage</label>
-                                <input type="range" min="1" max="10" value="1" class="w-full" id="frontendStorage" 
-                                    oninput="updatePrice('frontend')">
-                                <div class="flex justify-between text-xs mt-1">
-                                    <span>1 GB</span>
-                                    <span id="frontendStorageValue">1 GB</span>
                                 </div>
                             </div>
                         </div>
@@ -257,19 +267,10 @@
                             <div>
                                 <label class="text-xs text-gray-400">CPU Cores</label>
                                 <input type="range" min="4" max="12" value="4" class="w-full" id="backendCPU" 
-                                    oninput="updatePrice('backend')">
+                                    oninput="updatePrice()">
                                 <div class="flex justify-between text-xs mt-1">
                                     <span>4 cores</span>
                                     <span id="backendCPUValue">4 cores</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-400">Storage</label>
-                                <input type="range" min="1" max="30" value="1" class="w-full" id="backendStorage" 
-                                    oninput="updatePrice('backend')">
-                                <div class="flex justify-between text-xs mt-1">
-                                    <span>1 GB</span>
-                                    <span id="backendStorageValue">1 GB</span>
                                 </div>
                             </div>
                         </div>
@@ -283,12 +284,12 @@
                         </div>
                         <div class="space-y-4">
                             <div>
-                                <label class="text-xs text-gray-400">Storage</label>
-                                <input type="range" min="1" max="30" value="1" class="w-full" id="dbStorage" 
-                                    oninput="updatePrice('db')">
+                                <label class="text-xs text-gray-400">CPU Cores</label>
+                                <input type="range" min="4" max="12" value="4" class="w-full" id="dbCPU" 
+                                    oninput="updatePrice()">
                                 <div class="flex justify-between text-xs mt-1">
-                                    <span>1 GB</span>
-                                    <span id="dbStorageValue">1 GB</span>
+                                    <span>4 cores</span>
+                                    <span id="dbCPUValue">4 cores</span>
                                 </div>
                             </div>
                         </div>
@@ -303,7 +304,7 @@
                             <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Everything in Hobby
+                            30GB Initial Storage ($1/GB for additional)
                         </li>
                         <li class="flex items-center text-sm">
                             <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -475,36 +476,37 @@
     </footer>
 
     <script>
-        function updatePrice(type) {
+        function updatePrice() {
             // Base prices
             const baseFrontend = 20;
             const baseBackend = 20;
             const baseDB = 30;
+            const baseStorage = 30; // Base storage included
             
             // Get slider values
             const frontendCPU = parseInt(document.getElementById('frontendCPU').value);
-            const frontendStorage = parseInt(document.getElementById('frontendStorage').value);
             const backendCPU = parseInt(document.getElementById('backendCPU').value);
-            const backendStorage = parseInt(document.getElementById('backendStorage').value);
-            const dbStorage = parseInt(document.getElementById('dbStorage').value);
+            const dbCPU = parseInt(document.getElementById('dbCPU').value);
+            const totalStorage = parseInt(document.getElementById('totalStorage').value);
             
             // Update display values
             document.getElementById('frontendCPUValue').textContent = `${frontendCPU} cores`;
-            document.getElementById('frontendStorageValue').textContent = `${frontendStorage} GB`;
             document.getElementById('backendCPUValue').textContent = `${backendCPU} cores`;
-            document.getElementById('backendStorageValue').textContent = `${backendStorage} GB`;
-            document.getElementById('dbStorageValue').textContent = `${dbStorage} GB`;
+            document.getElementById('dbCPUValue').textContent = `${dbCPU} cores`;
+            document.getElementById('totalStorageValue').textContent = `${totalStorage} GB`;
             
             // Calculate prices
-            const frontendPrice = baseFrontend + (frontendCPU - 4) * 2 + (frontendStorage - 1) * 1;
-            const backendPrice = baseBackend + (backendCPU - 4) * 2 + (backendStorage - 1) * 1;
-            const dbPrice = baseDB + (dbStorage - 1) * 1;
+            const frontendPrice = baseFrontend + (frontendCPU - 4) * 2;
+            const backendPrice = baseBackend + (backendCPU - 4) * 2;
+            const dbPrice = baseDB + (dbCPU - 4) * 2;
+            const storagePrice = Math.max(0, totalStorage - baseStorage) * 1; // $1 per GB over base storage
             
             // Update price displays
             document.getElementById('frontendPrice').textContent = frontendPrice;
             document.getElementById('backendPrice').textContent = backendPrice;
             document.getElementById('dbPrice').textContent = dbPrice;
-            document.getElementById('totalPrice').textContent = frontendPrice + backendPrice + dbPrice;
+            document.getElementById('storagePrice').textContent = storagePrice;
+            document.getElementById('totalPrice').textContent = frontendPrice + backendPrice + dbPrice + storagePrice;
         }
     </script>
 </body>
