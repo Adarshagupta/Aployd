@@ -599,31 +599,91 @@ fi
 
 echo -e "4. Check Docker Configuration. "
 
-# Check if Docker daemon is running
-if ! docker info >/dev/null 2>&1; then
-    echo " - Docker daemon is not running. Starting Docker daemon..."
+# Function to check Docker installation
+check_docker_installation() {
+    if ! command -v docker &> /dev/null; then
+        echo " - Docker binary not found. Installation may have failed."
+        return 1
+    fi
+    
+    # Check Docker files and permissions
+    if [ ! -e /var/run/docker.sock ]; then
+        echo " - Docker socket file missing. Creating it..."
+        touch /var/run/docker.sock
+    fi
+    
+    # Set proper permissions for Docker socket
+    chown root:docker /var/run/docker.sock || true
+    chmod 666 /var/run/docker.sock || true
+    
+    return 0
+}
+
+# Function to start Docker daemon with better error handling
+start_docker_daemon() {
+    echo " - Attempting to start Docker daemon..."
+    
+    # Stop any existing Docker process
+    systemctl stop docker || true
+    killall dockerd &> /dev/null || true
+    
+    # Start Docker service
     if command -v systemctl >/dev/null 2>&1; then
         systemctl start docker
         systemctl enable docker
+        echo " - Waiting for Docker daemon to initialize..."
+        sleep 5
     elif command -v service >/dev/null 2>&1; then
         service docker start
+        echo " - Waiting for Docker daemon to initialize..."
+        sleep 5
     else
-        echo " - Could not start Docker daemon. Please start it manually and run this script again."
-        exit 1
+        echo " - No service manager found (systemctl/service). Starting Docker daemon directly..."
+        dockerd &> /dev/null &
+        echo " - Waiting for Docker daemon to initialize..."
+        sleep 10
+    fi
+}
+
+# Check if Docker daemon is running
+if ! docker info >/dev/null 2>&1; then
+    echo " - Docker daemon is not running."
+    
+    # Verify Docker installation
+    if ! check_docker_installation; then
+        echo " - Attempting to reinstall Docker..."
+        if command -v apt-get >/dev/null 2>&1; then
+            apt-get remove -y docker docker-engine docker.io containerd runc || true
+            apt-get update
+            apt-get install -y docker.io
+        elif command -v dnf >/dev/null 2>&1; then
+            dnf remove -y docker docker-engine docker.io containerd runc || true
+            dnf install -y docker
+        fi
     fi
     
-    # Wait for Docker daemon to start
-    echo " - Waiting for Docker daemon to start..."
-    for i in {1..30}; do
+    # Start Docker daemon
+    start_docker_daemon
+    
+    # Check if Docker is running after start attempts
+    for i in {1..3}; do
         if docker info >/dev/null 2>&1; then
             echo " - Docker daemon started successfully."
             break
+        else
+            echo " - Attempt $i: Docker daemon still not running. Retrying..."
+            start_docker_daemon
         fi
-        if [ $i -eq 30 ]; then
-            echo " - Docker daemon failed to start. Please check Docker installation and try again."
+        
+        if [ $i -eq 3 ]; then
+            echo " - Docker daemon failed to start after multiple attempts."
+            echo " - Troubleshooting steps:"
+            echo "   1. Check Docker service status: systemctl status docker"
+            echo "   2. Check Docker logs: journalctl -u docker"
+            echo "   3. Verify Docker socket permissions: ls -l /var/run/docker.sock"
+            echo "   4. Try starting Docker manually: systemctl start docker"
             exit 1
         fi
-        sleep 1
     done
 fi
 
