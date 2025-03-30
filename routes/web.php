@@ -86,6 +86,14 @@ Route::group(['middleware' => ['auth:sanctum', ApiAllowed::class]], function () 
     Route::get('/docs/api/definition', DefinitionController::class)->name('redoc.definition');
 });
 
+Route::get('/pricing', function () {
+    return view('pricing.index');
+})->name('pricing');
+
+Route::get('/contact', function () {
+    return view('contact.index');
+})->name('contact');
+
 Route::get('/admin', AdminIndex::class)->name('admin.index');
 
 Route::post('/forgot-password', [Controller::class, 'forgot_password'])->name('password.forgot')->middleware('throttle:forgot-password');
@@ -104,7 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/force-password-reset', ForcePasswordReset::class)->name('auth.force-password-reset');
     });
 
-    Route::get('/', Dashboard::class)->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/onboarding', BoardingIndex::class)->name('onboarding');
 
     Route::get('/subscription', SubscriptionShow::class)->name('subscription.show');
@@ -345,6 +353,12 @@ Route::middleware(['auth'])->group(function () {
     })->name('download.backup');
 
 });
+
+// Logout route
+Route::post('/logout', [App\Http\Controllers\Auth\LogoutController::class, 'logout'])->middleware('auth')->name('logout');
+
+// Public home page route
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::any('/{any}', function () {
     if (auth()->user()) {
