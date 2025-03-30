@@ -599,6 +599,34 @@ fi
 
 echo -e "4. Check Docker Configuration. "
 
+# Check if Docker daemon is running
+if ! docker info >/dev/null 2>&1; then
+    echo " - Docker daemon is not running. Starting Docker daemon..."
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl start docker
+        systemctl enable docker
+    elif command -v service >/dev/null 2>&1; then
+        service docker start
+    else
+        echo " - Could not start Docker daemon. Please start it manually and run this script again."
+        exit 1
+    fi
+    
+    # Wait for Docker daemon to start
+    echo " - Waiting for Docker daemon to start..."
+    for i in {1..30}; do
+        if docker info >/dev/null 2>&1; then
+            echo " - Docker daemon started successfully."
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            echo " - Docker daemon failed to start. Please check Docker installation and try again."
+            exit 1
+        fi
+        sleep 1
+    done
+fi
+
 echo " - Network pool configuration: ${DOCKER_ADDRESS_POOL_BASE}/${DOCKER_ADDRESS_POOL_SIZE}"
 echo " - To override existing configuration: DOCKER_POOL_FORCE_OVERRIDE=true"
 
@@ -851,12 +879,21 @@ IS_COOLIFY_VOLUME_EXISTS=$(docker volume ls | grep coolify-db | wc -l)
 set -e
 
 if [ "$IS_COOLIFY_VOLUME_EXISTS" -eq 0 ]; then
-    echo " - Generating SSH key."
-    ssh-keygen -t ed25519 -a 100 -f /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal -q -N "" -C coolify
-    chown 9999 /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal
+    echo " - Checking for existing SSH key..."
+    if [ -f "/data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal" ]; then
+        echo " - Using existing SSH key."
+    else
+        echo " - Generating new SSH key."
+        ssh-keygen -t ed25519 -a 100 -f /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal -q -N "" -C coolify
+        chown 9999 /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal
+    fi
+    
+    # Update authorized_keys regardless of whether we generated a new key
     sed -i "/coolify/d" ~/.ssh/authorized_keys
-    cat /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal.pub >>~/.ssh/authorized_keys
-    rm -f /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal.pub
+    if [ -f "/data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal.pub" ]; then
+        cat /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal.pub >>~/.ssh/authorized_keys
+        rm -f /data/coolify/ssh/keys/id.$CURRENT_USER@host.docker.internal.pub
+    fi
 fi
 
 chown -R 9999:root /data/coolify
