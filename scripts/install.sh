@@ -689,6 +689,12 @@ else
 fi
 
 echo -e "5. Download required files from CDN. "
+
+# Create required directories with proper permissions
+mkdir -p /data/coolify/source
+chown -R 9999:root /data/coolify
+chmod -R 700 /data/coolify
+
 echo " - Downloading docker-compose.yml"
 if ! curl -fsSL $CDN/docker-compose.yml -o /data/coolify/source/docker-compose.yml; then
     echo " - Failed to download docker-compose.yml from $CDN/docker-compose.yml"
