@@ -7,7 +7,7 @@
     "auth.login.gitlab": "Login with Gitlab",
     "auth.login.google": "Login with Google",
     "auth.login.infomaniak": "Login with Infomaniak",
-    "auth.already_registered": "Already registered?",
+    "auth.already_registered": "hhh",
     "auth.confirm_password": "Confirm password",
     "auth.forgot_password": "Forgot password",
     "auth.forgot_password_send_email": "Send password reset email",
