@@ -36,13 +36,15 @@ install_docker() {
     if ! command_exists docker; then
         print_status "Installing Docker..."
         apt-get update
-        apt-get install -y ca-certificates curl gnupg
+        apt-get install -y ca-certificates curl gnupg git
         install -m 0755 -d /etc/apt/keyrings
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         chmod a+r /etc/apt/keyrings/docker.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
         apt-get update
         apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        systemctl enable docker
+        systemctl start docker
     else
         print_status "Docker already installed"
     fi
@@ -97,6 +99,7 @@ install_docker
 # Create project directory
 print_status "Setting up project directory..."
 PROJECT_DIR="/var/www/aployd"
+rm -rf $PROJECT_DIR
 mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 
@@ -105,7 +108,7 @@ print_status "Cloning the Aployd repository..."
 git clone https://github.com/Adarshagupta/Aployd .
 
 # Create docker-compose.yml
-print_status "Creating Docker Compose configuration..."
+print_status "Creating Docker configuration..."
 cat > docker-compose.yml << 'EOL'
 version: '3.8'
 
@@ -139,8 +142,8 @@ services:
     environment:
       MYSQL_DATABASE: aployd
       MYSQL_USER: aployd
-      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -271,8 +274,8 @@ REDIS_PASSWORD=null
 REDIS_PORT=6379
 EOL
 
-# Start Docker containers
-print_status "Starting Docker containers..."
+# Build and start Docker containers
+print_status "Building and starting Docker containers..."
 docker compose up -d --build
 
 # Wait for containers to be ready
@@ -280,7 +283,7 @@ print_status "Waiting for containers to be ready..."
 sleep 30
 
 # Run Laravel commands
-print_status "Running Laravel commands..."
+print_status "Running Laravel setup commands..."
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --force
 docker compose exec app php artisan config:cache
