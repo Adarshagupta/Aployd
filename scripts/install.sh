@@ -689,10 +689,29 @@ else
 fi
 
 echo -e "5. Download required files from CDN. "
-curl -fsSL $CDN/docker-compose.yml -o /data/coolify/source/docker-compose.yml
-curl -fsSL $CDN/docker-compose.prod.yml -o /data/coolify/source/docker-compose.prod.yml
-curl -fsSL $CDN/.env.production -o /data/coolify/source/.env.production
-curl -fsSL $CDN/scripts/upgrade.sh -o /data/coolify/source/upgrade.sh
+echo " - Downloading docker-compose.yml"
+if ! curl -fsSL $CDN/docker-compose.yml -o /data/coolify/source/docker-compose.yml; then
+    echo " - Failed to download docker-compose.yml from $CDN/docker-compose.yml"
+    exit 1
+fi
+
+echo " - Downloading docker-compose.prod.yml"
+if ! curl -fsSL $CDN/docker-compose.prod.yml -o /data/coolify/source/docker-compose.prod.yml; then
+    echo " - Failed to download docker-compose.prod.yml from $CDN/docker-compose.prod.yml"
+    exit 1
+fi
+
+echo " - Downloading .env.production"
+if ! curl -fsSL $CDN/.env.production -o /data/coolify/source/.env.production; then
+    echo " - Failed to download .env.production from $CDN/.env.production"
+    exit 1
+fi
+
+echo " - Downloading upgrade.sh"
+if ! curl -fsSL $CDN/scripts/upgrade.sh -o /data/coolify/source/upgrade.sh; then
+    echo " - Failed to download upgrade.sh from $CDN/scripts/upgrade.sh"
+    exit 1
+fi
 
 echo -e "6. Make backup of .env to .env-$DATE"
 
