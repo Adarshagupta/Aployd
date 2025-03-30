@@ -37,37 +37,50 @@ apt-get install -y \
     composer \
     git \
     unzip \
-    mysql-server
+    mysql-server \
+    npm
 
 # Configure MySQL
 print_status "Configuring MySQL..."
 mysql_password=$(openssl rand -base64 12)
-mysql -e "CREATE DATABASE IF NOT EXISTS coolify;"
-mysql -e "CREATE USER IF NOT EXISTS 'coolify'@'localhost' IDENTIFIED BY '$mysql_password';"
-mysql -e "GRANT ALL PRIVILEGES ON coolify.* TO 'coolify'@'localhost';"
+mysql -e "CREATE DATABASE IF NOT EXISTS aployd;"
+mysql -e "CREATE USER IF NOT EXISTS 'aployd'@'localhost' IDENTIFIED BY '$mysql_password';"
+mysql -e "GRANT ALL PRIVILEGES ON aployd.* TO 'aployd'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 # Create project directory
 print_status "Setting up project directory..."
-PROJECT_DIR="/var/www/coolify"
+PROJECT_DIR="/var/www/aployd"
 mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 
-# Clone the repository
-print_status "Cloning the repository..."
-git clone https://github.com/coollabsio/coolify .
+# Clone your repository
+print_status "Cloning the Aployd repository..."
+git clone https://github.com/Adarshagupta/Aployd .
+
+# Install Node.js dependencies
+print_status "Installing Node.js dependencies..."
+npm install
+
+# Build frontend assets
+print_status "Building frontend assets..."
+npm run build
 
 # Set permissions
 print_status "Setting correct permissions..."
 chown -R www-data:www-data $PROJECT_DIR
 chmod -R 755 $PROJECT_DIR
+chmod -R 775 $PROJECT_DIR/storage
+chmod -R 775 $PROJECT_DIR/bootstrap/cache
 
 # Configure environment
 print_status "Setting up environment configuration..."
 cp .env.example .env
 php artisan key:generate
-sed -i "s/DB_PASSWORD=/DB_PASSWORD=$mysql_password/" .env
-sed -i "s#APP_URL=http://localhost#APP_URL=http://$(curl -s ifconfig.me)#" .env
+sed -i "s/DB_DATABASE=.*/DB_DATABASE=aployd/" .env
+sed -i "s/DB_USERNAME=.*/DB_USERNAME=aployd/" .env
+sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$mysql_password/" .env
+sed -i "s#APP_URL=.*#APP_URL=http://$(curl -s ifconfig.me)#" .env
 
 # Install composer dependencies
 print_status "Installing PHP dependencies..."
@@ -79,11 +92,11 @@ php artisan migrate --force
 
 # Configure Nginx
 print_status "Configuring Nginx..."
-cat > /etc/nginx/sites-available/coolify << 'EOL'
+cat > /etc/nginx/sites-available/aployd << 'EOL'
 server {
     listen 80;
     server_name _;
-    root /var/www/coolify/public;
+    root /var/www/aployd/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
@@ -115,7 +128,7 @@ EOL
 
 # Enable the site
 print_status "Enabling Nginx site configuration..."
-ln -sf /etc/nginx/sites-available/coolify /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/aployd /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
 # Test Nginx configuration
@@ -133,9 +146,9 @@ systemctl restart php8.1-fpm
 systemctl restart nginx
 
 print_success "Installation completed!"
-print_success "Your Coolify instance should now be accessible via http://$(curl -s ifconfig.me)"
+print_success "Your Aployd instance should now be accessible via http://$(curl -s ifconfig.me)"
 print_success "MySQL Database Details:"
-print_success "Database: coolify"
-print_success "Username: coolify"
+print_success "Database: aployd"
+print_success "Username: aployd"
 print_success "Password: $mysql_password"
 print_success "Please save these credentials securely!" 
